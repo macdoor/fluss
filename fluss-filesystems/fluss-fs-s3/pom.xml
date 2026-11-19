@@ -206,7 +206,8 @@
                     <artifactId>jettison</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
+            <scope>provided</scope>
+    </dependency>
 
         <!-- The Hadoop file system adapter classes (bundled) -->
         <dependency>
@@ -221,32 +222,38 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>aws-core</artifactId>
             <version>${fs.s3.aws.sdk2.version}</version>
-        </dependency>
+            <scope>provided</scope>
+    </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>auth</artifactId>
             <version>${fs.s3.aws.sdk2.version}</version>
-        </dependency>
+            <scope>provided</scope>
+    </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>s3</artifactId>
             <version>${fs.s3.aws.sdk2.version}</version>
-        </dependency>
+            <scope>provided</scope>
+    </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>kms</artifactId>
             <version>${fs.s3.aws.sdk2.version}</version>
-        </dependency>
+            <scope>provided</scope>
+    </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>sts</artifactId>
             <version>${fs.s3.aws.sdk2.version}</version>
-        </dependency>
+            <scope>provided</scope>
+    </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>s3-transfer-manager</artifactId>
             <version>${fs.s3.aws.sdk2.version}</version>
-        </dependency>
+            <scope>provided</scope>
+    </dependency>
 
         <!-- Hadoop's s3 support classes (bundled) -->
         <dependency>
@@ -267,7 +274,8 @@
                     <artifactId>slf4j-reload4j</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
+            <scope>provided</scope>
+    </dependency>
 
         <dependency>
             <!-- Hadoop requires jaxb-api for javax.xml.bind.JAXBException -->
