@@ -24,6 +24,7 @@ import org.apache.fluss.client.table.Table;
 import org.apache.fluss.client.table.writer.TableWriter;
 import org.apache.fluss.config.Configuration;
 import org.apache.fluss.exception.FlussRuntimeException;
+import org.apache.fluss.exception.WriterForceClosedException;
 import org.apache.fluss.flink.metrics.FlinkMetricRegistry;
 import org.apache.fluss.flink.row.OperationType;
 import org.apache.fluss.flink.row.RowWithOp;
@@ -202,9 +203,36 @@ public abstract class FlinkSinkWriter<InputT> implements SinkWriter<InputT> {
         flinkMetricRegistry = null;
 
         // Rethrow exception for the case in which close is called before writer() and flush().
-        checkAsyncException();
+        // A WriterForceClosedException is the expected consequence of the zero-timeout connection
+        // close above (or of closing from a write callback): the un-persisted records will be
+        // replayed from the last checkpoint on failover/cancellation. Escalating it to a fatal
+        // error would tear down the whole TaskManager on every cancellation (Task's cleanup-path
+        // exceptions are treated as fatal by notifyFatalError), so log and swallow it here.
+        // Genuine send failures keep propagating as before.
+        try {
+            checkAsyncException();
+        } catch (IOException e) {
+            if (hasCauseOfType(e, WriterForceClosedException.class)) {
+                LOG.warn(
+                        "Ignoring force-closed writer aborts on close; un-persisted records will be"
+                                + " replayed from the last checkpoint.");
+            } else {
+                throw e;
+            }
+        }
 
         LOG.info("Finished closing Fluss sink function.");
+    }
+
+    private static boolean hasCauseOfType(Throwable throwable, Class<? extends Throwable> type) {
+        Throwable t = throwable;
+        while (t != null) {
+            if (type.isInstance(t)) {
+                return true;
+            }
+            t = t.getCause();
+        }
+        return false;
     }
 
     private void sanityCheck(TableInfo flussTableInfo) {

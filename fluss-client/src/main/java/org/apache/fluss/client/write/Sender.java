@@ -22,7 +22,6 @@ import org.apache.fluss.client.metadata.MetadataUpdater;
 import org.apache.fluss.client.metrics.WriterMetricGroup;
 import org.apache.fluss.client.write.RecordAccumulator.ReadyCheckResult;
 import org.apache.fluss.cluster.Cluster;
-import org.apache.fluss.exception.FlussRuntimeException;
 import org.apache.fluss.exception.HistoricalPartitionThrottledException;
 import org.apache.fluss.exception.InvalidMetadataException;
 import org.apache.fluss.exception.LeaderNotAvailableException;
@@ -31,6 +30,7 @@ import org.apache.fluss.exception.PartitionNotExistException;
 import org.apache.fluss.exception.RetriableException;
 import org.apache.fluss.exception.StorageBackpressureException;
 import org.apache.fluss.exception.UnknownTableOrBucketException;
+import org.apache.fluss.exception.WriterForceClosedException;
 import org.apache.fluss.metadata.PhysicalTablePath;
 import org.apache.fluss.metadata.TableBucket;
 import org.apache.fluss.rpc.gateway.TabletServerGateway;
@@ -196,7 +196,7 @@ public class Sender implements Runnable {
                                 "Failing incomplete write batches since the writer was force closed.");
                     }
                     abortAllBatches(
-                            new FlussRuntimeException(
+                            new WriterForceClosedException(
                                     "Writer was force closed before the write completed."));
                 }
             } finally {
