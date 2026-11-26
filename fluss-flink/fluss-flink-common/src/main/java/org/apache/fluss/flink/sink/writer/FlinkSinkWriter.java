@@ -202,13 +202,15 @@ public abstract class FlinkSinkWriter<InputT> implements SinkWriter<InputT> {
         }
         flinkMetricRegistry = null;
 
-        // Rethrow exception for the case in which close is called before writer() and flush().
-        // A WriterForceClosedException is the expected consequence of the zero-timeout connection
-        // close above (or of closing from a write callback): the un-persisted records will be
-        // replayed from the last checkpoint on failover/cancellation. Escalating it to a fatal
-        // error would tear down the whole TaskManager on every cancellation (Task's cleanup-path
-        // exceptions are treated as fatal by notifyFatalError), so log and swallow it here.
-        // Genuine send failures keep propagating as before.
+        // Do not rethrow the recorded async exception here. Any genuine send failure is
+        // surfaced by write()/flush() first (both call checkAsyncException on the mailbox
+        // thread) and fails over the job at task level; rethrowing it again from close()
+        // only re-reports the same failure on the task cleanup path, where Task treats any
+        // exception as fatal (notifyFatalError) and tears down the whole TaskManager -
+        // killing every other job on it. This includes the WriterForceClosedException from
+        // the zero-timeout connection close above (an expected consequence of closing, with
+        // un-persisted records replayed from the last checkpoint) and real send failures
+        // observed during cancellation. Log to keep the failure visible.
         try {
             checkAsyncException();
         } catch (IOException e) {
@@ -217,7 +219,10 @@ public abstract class FlinkSinkWriter<InputT> implements SinkWriter<InputT> {
                         "Ignoring force-closed writer aborts on close; un-persisted records will be"
                                 + " replayed from the last checkpoint.");
             } else {
-                throw e;
+                LOG.error(
+                        "Ignoring writer failure surfaced on close; the task fails over via"
+                                + " write()/flush() paths.",
+                        e);
             }
         }
 
